@@ -52,7 +52,7 @@ ASUS_WMI_CTRL_PARAM = ASUS_WMI_BASE / "ctrl_param"
 ASUS_WMI_DEVS = ASUS_WMI_BASE / "devs"
 
 VERSION = "0.2.2"
-PROJECT_URL = "https://github.com/<your-username>/vrgb"
+PROJECT_URL = "https://github.com/vrgb-dev/vrgb"
 
 # ===== Utilities =====
 
