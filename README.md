@@ -45,3 +45,39 @@ Example device identifiers:
 ```text
 HID_NAME=ITE5570:00 0B05:19B6
 HID_ID=0018:00000B05:000019B6
+
+---
+
+## Quick Install
+
+```bash
+git clone https://github.com/vrgb-dev/vrgb.git
+cd vrgb
+chmod +x install.sh
+./install.sh
+
+Log out and log back in after installation.
+
+---
+
+## Commands
+
+Show device status:
+
+vrgb status
+
+Set RGB color:
+
+vrgb set 00aa55 65
+
+Change brightness:
+
+vrgb brightness 80
+
+Turn lights off:
+
+vrgb off
+
+Restore saved state:
+
+vrgb restore
