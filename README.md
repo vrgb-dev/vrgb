@@ -1,8 +1,4 @@
-[VRGB Logo]
-
-VRGB
-
-Userspace RGB control for ASUS HID LampArray keyboards on Linux.
+VRGB: RGB control for ASUS Vivobook HID LampArray keyboards on Linux.
 
 No kernel mods.
 No daemon.
@@ -10,28 +6,21 @@ Just HID.
 
 ------------------------------------------------------------------------
 
-Overview
+### Overview
 
 VRGB is a lightweight Linux CLI utility for controlling RGB keyboards on
 certain ASUS laptops that expose the HID LampArray interface.
 
-The project was developed and validated on:
+**The project was developed and validated on:**
 
 ASUS Vivobook S14 (S5406SA-WH79)
 Keyboard controller: ITE5570
 
-Unlike most RGB tools, VRGB does not rely on:
 
--   kernel patches
--   vendor utilities
--   background daemons
--   embedded controller hacks
--   reverse engineered Windows drivers
+Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, background daemons, controller hacks, or reverse-engineered Windows drivers. VRGB simply communicates with the keyboard controller through the Linux HID subsystem. 
 
-Instead, VRGB communicates directly with the keyboard controller through
-the Linux HID subsystem.
 
-Control path:
+**Control path:**
 
     vrgb.py
        ↓
@@ -41,23 +30,16 @@ Control path:
        ↓
     RGB lighting
 
-This keeps the project:
-
--   simple
--   transparent
--   portable
--   secure
-
 Current stable release: v0.2.2
 
 ------------------------------------------------------------------------
 
-Features
+### Features
 
 -   Static RGB color control
 -   Fine brightness scaling (0–100%)
 -   Firmware autonomous mode toggle
--   Optional OEM rainbow toggle
+-   OEM rainbow toggle (sudo required)
 -   Debug diagnostics
 -   Persistent configuration
 -   Installer and uninstaller included
@@ -66,7 +48,7 @@ Features
 
 ------------------------------------------------------------------------
 
-Supported Hardware
+### Supported Hardware
 
 Currently validated on:
 
@@ -80,13 +62,11 @@ Example device identifiers:
     HID_ID=0018:00000B05:000019B6
 
 Other ASUS laptops using the same controller may work but require
-testing.
-
-Community reports are welcome.
+testing. Community reports are more than welcome. 
 
 ------------------------------------------------------------------------
 
-Quick Install
+### Quick Install
 
 Clone the repository and run the installer.
 
@@ -99,25 +79,23 @@ After installation log out and log back in so group permissions apply.
 
 ------------------------------------------------------------------------
 
-Command Reference
+### Command Reference
 
-Show Status
+Show Current Status
 
     vrgb status
 
 Set RGB Color
 
-    vrgb set RRGGBB [percent]
+    vrgb set RRGGBB [brightness %]
 
-Example:
+*Example:*
 
     vrgb set 00aa55 65
 
 Change Brightness
 
     vrgb brightness 80
-
-Range: 0–100
 
 Turn Lighting Off
 
@@ -127,9 +105,7 @@ Restore Saved State
 
     vrgb restore
 
-Firmware Autonomous Mode
-
-Enable firmware lighting:
+Enable firmware lighting (Firmware Autonomous Mode)
 
     vrgb auto on
 
@@ -137,10 +113,10 @@ Return control to VRGB:
 
     vrgb auto off
 
-OEM Rainbow Mode
+OEM Rainbow Mode (requires sudo)
 
-    vrgb rainbow on
-    vrgb rainbow off
+    sudo vrgb rainbow on
+    sudo vrgb rainbow off
 
 Debug Mode
 
@@ -150,9 +126,13 @@ About
 
     vrgb about
 
+Command List
+
+    vrgb
+
 ------------------------------------------------------------------------
 
-Manual Installation
+### Manual Installation
 
 Install Binary
 
@@ -182,7 +162,7 @@ Log out and log back in afterward.
 
 ------------------------------------------------------------------------
 
-Optional KDE Autostart Restore
+### Optional KDE Autostart Restore
 
 Create:
 
@@ -201,7 +181,7 @@ Contents:
 
 ------------------------------------------------------------------------
 
-Uninstall
+### Uninstall
 
     ./uninstall.sh
 
@@ -213,26 +193,10 @@ Removes:
 
 ------------------------------------------------------------------------
 
-Project Philosophy
-
-VRGB intentionally avoids complexity.
-
-Design goals:
-
--   no background daemon
--   no kernel modules
--   no runtime dependencies
--   reversible installation
--   minimal attack surface
--   transparent hardware access
-
-------------------------------------------------------------------------
-
-Changelog
+### Changelog
 
 v0.2.2
 
--   Added ASCII banner and about command
 -   Improved CLI help output
 -   Installer polish
 -   Confirmed non-root HID access
@@ -250,12 +214,6 @@ Initial prototype with static RGB and brightness control.
 
 ------------------------------------------------------------------------
 
-License
-
-MIT License
-
-------------------------------------------------------------------------
-
-Repository
+### Repository
 
 https://github.com/vrgb-dev/vrgb
