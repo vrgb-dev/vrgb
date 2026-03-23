@@ -2,7 +2,7 @@
   <img src="assets/vrgblogodark.png" width="500">
 </p>
 
-VRGB: RGB control for ASUS Vivobook HID LampArray keyboards on Linux.
+<center>RGB control for ASUS Vivobook HID LampArray keyboards on Linux.</center>
 
 ------------------------------------------------------------------------
 
