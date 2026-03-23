@@ -83,6 +83,8 @@ Example device identifiers:
 
 ## Compatibility
 
+VRGB scans available hidraw devices and selects the matching ASUS keyboard controller automatically.
+
 Other ASUS laptops using the same controller may work but require
 testing. Community reports are more than welcome. If vrgb works (or doesn't) work on your system, please click the Hardware Compatibility Reports issue below and post your *vrgb --debug status* output. This will help the project immensely.
 
