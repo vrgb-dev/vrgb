@@ -201,6 +201,19 @@ Removes:
 
 ------------------------------------------------------------------------
 
+### Roadmap
+
+Planned future work:
+
+- profile support
+- expanded ASUS hardware compatibility
+- GUI frontend
+- breathing / fade effects
+
+With future updates in mind, this project will aim to continue to be as efficient and lightweight as possible.
+
+------------------------------------------------------------------------
+
 ### Changelog
 
 v0.2.2
