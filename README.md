@@ -70,7 +70,7 @@ Example device identifiers:
     HID_ID=0018:00000B05:000019B6
 
 Other ASUS laptops using the same controller may work but require
-testing. Community reports are more than welcome. 
+testing. Community reports are more than welcome. If vrgb works (or doesn't) work on your system, please open an issue and post your *vrgb --debug status* output. This will help the project immensely.
 
 ------------------------------------------------------------------------
 
@@ -219,8 +219,9 @@ With future updates in mind, this project will aim to continue to be as efficien
 v0.2.2
 
 -   Improved CLI help output
--   Installer polish
+-   Installer/Uninstaller validation
 -   Confirmed non-root HID access
+-   Release packaging
 
 v0.2.0
 
