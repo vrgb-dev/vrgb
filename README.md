@@ -6,7 +6,7 @@
 
 ------------------------------------------------------------------------
 
-### Overview
+## Overview
 
 VRGB is a lightweight Linux CLI utility for controlling RGB keyboards on
 certain ASUS laptops that expose the HID LampArray interface.
@@ -42,7 +42,7 @@ Current stable release: v0.2.2
 
 ------------------------------------------------------------------------
 
-### Features
+## Features
 
 -   Static RGB color control
 -   Fine brightness scaling (0–100%)
@@ -56,7 +56,7 @@ Current stable release: v0.2.2
 
 ------------------------------------------------------------------------
 
-### Supported Hardware
+## Supported Hardware
 
 Currently validated on:
 
@@ -69,12 +69,19 @@ Example device identifiers:
     HID_NAME=ITE5570:00 0B05:19B6
     HID_ID=0018:00000B05:000019B6
 
+------------------------------------------------------------------------
+
+## Compatibility
+
 Other ASUS laptops using the same controller may work but require
-testing. Community reports are more than welcome. If vrgb works (or doesn't) work on your system, please open an issue and post your *vrgb --debug status* output. This will help the project immensely.
+testing. Community reports are more than welcome. If vrgb works (or doesn't) work on your system, please click the Hardware Compatibility Reports issue below and post your *vrgb --debug status* output. This will help the project immensely.
+
+See community reports here:  
+https://github.com/vrgb-dev/vrgb/issues/1
 
 ------------------------------------------------------------------------
 
-### Quick Install
+## Quick Install
 
 Clone the repository and run the installer.
 
@@ -87,7 +94,7 @@ After installation log out and log back in so group permissions apply.
 
 ------------------------------------------------------------------------
 
-### Command Reference
+## Command List
 
 Show Current Status
 
@@ -134,13 +141,13 @@ About
 
     vrgb about
 
-Command List
+Command List (CLI)
 
     vrgb
 
 ------------------------------------------------------------------------
 
-### Manual Installation
+## Manual Installation
 
 Install Binary
 
@@ -170,7 +177,7 @@ Log out and log back in afterward.
 
 ------------------------------------------------------------------------
 
-### Optional KDE Autostart Restore
+## Optional KDE Autostart Restore
 
 Create:
 
@@ -189,7 +196,7 @@ Contents:
 
 ------------------------------------------------------------------------
 
-### Uninstall
+## Uninstall
 
     ./uninstall.sh
 
@@ -201,7 +208,7 @@ Removes:
 
 ------------------------------------------------------------------------
 
-### Roadmap
+## Roadmap
 
 Planned future work:
 
@@ -214,7 +221,7 @@ With future updates in mind, this project will aim to continue to be as efficien
 
 ------------------------------------------------------------------------
 
-### Changelog
+## Changelog
 
 v0.2.2
 
@@ -236,10 +243,10 @@ Initial prototype with static RGB and brightness control.
 
 ------------------------------------------------------------------------
 
-### License
+## License
 
 MIT License
 
-### Repository
+## Repository
 
 https://github.com/vrgb-dev/vrgb
