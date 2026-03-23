@@ -18,14 +18,19 @@ I bought a Vivobook S14 and put Fedora on it for school and work. Fn brightness 
 
 VRGB is just a small script built around that discovery to get simple RGB control working on Linux without touching the kernel or running a daemon.
 
+<br>
 
 **The project was developed and validated on:**
 
 ASUS Vivobook S14 (S5406SA-WH79)
+
 Keyboard controller: ITE5570
 
+<br>
 
 Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, background daemons, controller hacks, or reverse-engineered Windows drivers. VRGB simply communicates with the keyboard controller through the Linux HID subsystem. 
+
+<br>
 
 
 **Control path:**
@@ -208,9 +213,9 @@ Removes:
 
 
 
-## Roadmap
+## Future Development
 
-Planned future work:
+Planned roadmap:
 
 - profile support
 - expanded ASUS hardware compatibility
