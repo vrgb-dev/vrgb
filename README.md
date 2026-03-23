@@ -222,6 +222,10 @@ Initial prototype with static RGB and brightness control.
 
 ------------------------------------------------------------------------
 
+### License
+
+MIT License
+
 ### Repository
 
 https://github.com/vrgb-dev/vrgb
