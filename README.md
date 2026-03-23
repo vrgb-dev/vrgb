@@ -45,7 +45,7 @@ Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, b
 
 Current stable release: v0.2.2
 
-## Example
+## Example Usage
 
 <p align="center">
   <img src="assets/vrgb-demo.png" width="550">
