@@ -146,11 +146,6 @@ About
 
     vrgb about
 
-Command List (CLI)
-
-    vrgb
-
-
 
 ## Manual Installation
 
