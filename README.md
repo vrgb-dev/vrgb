@@ -4,7 +4,7 @@
   RGB control for ASUS Vivobook HID LampArray keyboards on Linux<br>
 </p>
 
-------------------------------------------------------------------------
+
 
 ## Overview
 
@@ -40,7 +40,12 @@ Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, b
 
 Current stable release: v0.2.2
 
-------------------------------------------------------------------------
+## Example
+
+<p align="center">
+  <img src="assets/vrgb-demo.png" width="550">
+</p>
+
 
 ## Features
 
@@ -54,7 +59,7 @@ Current stable release: v0.2.2
 -   Non-root daily usage via udev permissions
 -   Optional KDE autostart restore
 
-------------------------------------------------------------------------
+
 
 ## Supported Hardware
 
@@ -69,7 +74,7 @@ Example device identifiers:
     HID_NAME=ITE5570:00 0B05:19B6
     HID_ID=0018:00000B05:000019B6
 
-------------------------------------------------------------------------
+
 
 ## Compatibility
 
@@ -79,7 +84,7 @@ testing. Community reports are more than welcome. If vrgb works (or doesn't) wor
 See community reports here:  
 https://github.com/vrgb-dev/vrgb/issues/1
 
-------------------------------------------------------------------------
+
 
 ## Quick Install
 
@@ -92,7 +97,7 @@ Clone the repository and run the installer.
 
 After installation log out and log back in so group permissions apply.
 
-------------------------------------------------------------------------
+
 
 ## Command List
 
@@ -145,7 +150,7 @@ Command List (CLI)
 
     vrgb
 
-------------------------------------------------------------------------
+
 
 ## Manual Installation
 
@@ -175,7 +180,7 @@ Reload udev
 
 Log out and log back in afterward.
 
-------------------------------------------------------------------------
+
 
 ## Optional KDE Autostart Restore
 
@@ -194,7 +199,7 @@ Contents:
     Name=VRGB Restore
     Comment=Restore keyboard RGB state
 
-------------------------------------------------------------------------
+
 
 ## Uninstall
 
@@ -206,7 +211,7 @@ Removes:
 -   the udev rule
 -   optional autostart entry
 
-------------------------------------------------------------------------
+
 
 ## Roadmap
 
@@ -219,7 +224,7 @@ Planned future work:
 
 With future updates in mind, this project will aim to continue to be as efficient and lightweight as possible.
 
-------------------------------------------------------------------------
+
 
 ## Changelog
 
@@ -241,7 +246,7 @@ v0.1.0
 
 Initial prototype with static RGB and brightness control.
 
-------------------------------------------------------------------------
+
 
 ## License
 
