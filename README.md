@@ -1,5 +1,6 @@
 <p align="center">
   <img src="assets/vrgblogodark.png" width="500"><br>
+  <br>
   RGB control for ASUS Vivobook HID LampArray keyboards on Linux<br>
 </p>
 
