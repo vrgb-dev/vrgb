@@ -9,12 +9,12 @@
 ## Overview
 
 VRGB is a lightweight Linux CLI utility for controlling RGB keyboards on
-certain ASUS laptops that expose the HID LampArray interface.
+Vivobook and Zenbook ASUS laptops that expose the HID LampArray interface.
 
 
 **Why this exists:**
 
-I bought a Vivobook S14 and put Fedora on it for school and work. Fn brightness worked, but the keyboard was stuck on white and none of the usual ASUS RGB tools did anything. After digging into it, I found the keyboard wasn’t using the typical ASUS control path at all. It exposed a HID LampArray device instead.
+I bought a Vivobook S14 and put Fedora on it for school and work. Fn brightness worked, but the keyboard was stuck on white and none of the usual ASUS RGB tools did anything. After digging into it, I found the keyboard wasn’t using the typical ASUS control path at all.
 
 VRGB is just a small script built around that discovery to get simple RGB control working on Linux without touching the kernel or running a daemon.
 
