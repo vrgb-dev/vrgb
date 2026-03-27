@@ -42,6 +42,8 @@ Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, b
     ITE5570 keyboard controller
        ↓
     RGB lighting
+
+Current Stable Release: v.0.3
     
 
 ## Example Usage
