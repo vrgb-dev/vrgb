@@ -106,6 +106,11 @@ Clone the repository and run the installer.
 After installation log out and log back in so group permissions apply.
 
 
+**Note:**
+Keyboard color persists on reboot, but may reset to firmware default after a full power cycle.
+Use the KDE autostart option in the installer (or set it manually) to reapply your configuration automatically.
+
+
 
 ## Command List
 
