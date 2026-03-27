@@ -43,7 +43,7 @@ Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, b
        ↓
     RGB lighting
 
-Current stable release: v0.2.2
+*Current stable release: v0.3*
 
 ## Example Usage
 
@@ -56,6 +56,7 @@ Current stable release: v0.2.2
 
 -   Static RGB color control
 -   Fine brightness scaling (0–100%)
+-   Custom profiles
 -   Firmware autonomous mode toggle
 -   OEM rainbow toggle (sudo required)
 -   Debug diagnostics
@@ -123,6 +124,22 @@ Set RGB Color
 Change Brightness
 
     vrgb brightness 80
+    
+Save Profile (Save Current State)
+
+    vrgb profile save fedorablue
+    
+Load Profile
+
+    vrgb profile load fedorablue
+    
+Delete a Profile
+
+    vrgb profile delete fedorablue
+    
+List Saved Profiles
+
+    vrgb profile list
 
 Turn Lighting Off
 
@@ -217,12 +234,10 @@ Removes:
 
 ## Future Development
 
-Planned roadmap:
-
-- profile support
 - expanded ASUS hardware compatibility
 - GUI frontend
-- breathing / fade effects
+- breathing / fade effect
+- effect profiles
 
 With future updates in mind, this project will aim to continue to be as efficient and lightweight as possible.
 
@@ -230,12 +245,20 @@ With future updates in mind, this project will aim to continue to be as efficien
 
 ## Changelog
 
+v0.3
+
+-    added named profile support
+-    profile save/load/list/delete commands
+-    profile data stored in config.json
+-    profile load applies immediately to hardware
+-    non-HID commands no longer require device detection
+
 v0.2.2
 
--   Improved CLI help output
--   Installer/Uninstaller validation
--   Confirmed non-root HID access
--   Release packaging
+-   improved CLI help output
+-   installer/Uninstaller validation
+-   confirmed non-root HID access
+-   release packaging
 
 v0.2.0
 
@@ -244,7 +267,7 @@ v0.2.0
 -   persistent config
 -   installer script
 
-v0.1.0
+v0.1
 
 Initial prototype with static RGB and brightness control.
 
