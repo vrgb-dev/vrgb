@@ -133,7 +133,7 @@ Load Profile
 
     vrgb profile load fedorablue
     
-Delete a Profile
+Delete Profile
 
     vrgb profile delete fedorablue
     
