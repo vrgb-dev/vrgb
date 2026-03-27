@@ -131,7 +131,7 @@ Change Brightness
 
     vrgb brightness 80
     
-Save Profile (Save Current State)
+Save Profile (Current State)
 
     vrgb profile save fedorablue
     
@@ -242,7 +242,7 @@ Removes:
 
 - expanded ASUS hardware compatibility
 - GUI frontend
-- breathing / fade effect
+- breathing / fade effects
 - effect profiles
 
 With future updates in mind, this project will aim to continue to be as efficient and lightweight as possible.
