@@ -39,8 +39,18 @@ def get_real_home() -> Path:
 CONFIG_DIR = get_real_home() / ".config" / "vrgb"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
-TARGET_HID_ID = "0018:00000B05:000019B6"
-TARGET_HID_NAME = "ITE5570:00 0B05:19B6"
+TARGET_HID_IDS = {
+    "0018:00000B05:000019B6": (0x0B, 0x05),
+    "0018:00000B05:00005570": (0x46, 0x45),
+}
+
+TARGET_HID_NAMES = {
+    "ITE5570:00 0B05:19B6": (0x0B, 0x05),
+    "ITE5570:00 0B05:5570": (0x46, 0x45),
+}
+
+FIRMWARE_REPORT_ID = None
+COLOR_REPORT_ID = None
 
 HOST_BYTE = 0x00
 FIRMWARE_BYTE = 0x01
@@ -51,7 +61,7 @@ ASUS_WMI_DEV_ID = ASUS_WMI_BASE / "dev_id"
 ASUS_WMI_CTRL_PARAM = ASUS_WMI_BASE / "ctrl_param"
 ASUS_WMI_DEVS = ASUS_WMI_BASE / "devs"
 
-VERSION = "0.3"
+VERSION = "0.3-mod"
 PROJECT_URL = "https://github.com/vrgb-dev/vrgb"
 
 # ===== Utilities =====
@@ -212,6 +222,8 @@ def get_saved_static_state(cfg):
 # ===== HID =====
 
 def find_device():
+    global FIRMWARE_REPORT_ID, COLOR_REPORT_ID
+
     base = Path("/sys/class/hidraw")
 
     debug(f"Config file: {CONFIG_FILE}")
@@ -222,6 +234,7 @@ def find_device():
     best_match = None
     best_score = -1
     best_reason = "no match"
+    best_report_ids = None
 
     for dev in sorted(base.iterdir()):
         uevent = dev / "device" / "uevent"
@@ -243,13 +256,16 @@ def find_device():
 
         score = -1
         reason = "no match"
+        report_ids = None
 
-        if hid_id == TARGET_HID_ID:
+        if hid_id in TARGET_HID_IDS:
             score = 100
             reason = "exact HID_ID match"
-        elif hid_name == TARGET_HID_NAME:
+            report_ids = TARGET_HID_IDS[hid_id]
+        elif hid_name in TARGET_HID_NAMES:
             score = 90
             reason = "exact HID_NAME match"
+            report_ids = TARGET_HID_NAMES[hid_name]
 
         debug(f"{dev.name}: hid_id={hid_id} hid_name={hid_name} score={score} reason={reason}")
 
@@ -257,9 +273,13 @@ def find_device():
             best_score = score
             best_match = f"/dev/{dev.name}"
             best_reason = reason
+            best_report_ids = report_ids
 
     if best_match:
+        if best_report_ids is not None:
+            FIRMWARE_REPORT_ID, COLOR_REPORT_ID = best_report_ids
         debug(f"Selected device: {best_match} ({best_reason})")
+        debug(f"Using report IDs: firmware=0x{FIRMWARE_REPORT_ID:02X} color=0x{COLOR_REPORT_ID:02X}")
         return best_match
 
     die("VRGB HID device not found")
@@ -277,7 +297,7 @@ def hid_set_feature(dev, report_id, payload_bytes):
 
 def set_firmware_mode(dev, enabled: bool):
     debug(f"set_firmware_mode enabled={enabled}")
-    hid_set_feature(dev, 0x0B, bytes([FIRMWARE_BYTE if enabled else HOST_BYTE]))
+    hid_set_feature(dev, FIRMWARE_REPORT_ID, bytes([FIRMWARE_BYTE if enabled else HOST_BYTE]))
 
 
 def set_color(dev, r, g, b, intensity):
@@ -293,7 +313,7 @@ def set_color(dev, r, g, b, intensity):
         clamp(intensity, 0, 255),
     ])
 
-    hid_set_feature(dev, 0x05, payload)
+    hid_set_feature(dev, COLOR_REPORT_ID, payload)
 
 
 # ===== OEM Rainbow =====
