@@ -39,8 +39,8 @@ def get_real_home() -> Path:
 CONFIG_DIR = get_real_home() / ".config" / "vrgb"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
-TARGET_HID_ID = "0018:00000B05:000019B6"
-TARGET_HID_NAME = "ITE5570:00 0B05:19B6"
+TARGET_HID_ID = "0018:00000B05:00005570"
+TARGET_HID_NAME = "ITE5570:00 0B05:5570"
 
 HOST_BYTE = 0x00
 FIRMWARE_BYTE = 0x01
@@ -277,7 +277,7 @@ def hid_set_feature(dev, report_id, payload_bytes):
 
 def set_firmware_mode(dev, enabled: bool):
     debug(f"set_firmware_mode enabled={enabled}")
-    hid_set_feature(dev, 0x0B, bytes([FIRMWARE_BYTE if enabled else HOST_BYTE]))
+    hid_set_feature(dev, 0x46, bytes([FIRMWARE_BYTE if enabled else HOST_BYTE]))
 
 
 def set_color(dev, r, g, b, intensity):
@@ -293,7 +293,7 @@ def set_color(dev, r, g, b, intensity):
         clamp(intensity, 0, 255),
     ])
 
-    hid_set_feature(dev, 0x05, payload)
+    hid_set_feature(dev, 0x45, payload)
 
 
 # ===== OEM Rainbow =====
