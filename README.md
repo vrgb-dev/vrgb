@@ -9,22 +9,31 @@
 ## Overview
 
 VRGB is a lightweight Linux CLI utility for controlling RGB keyboards on
-Vivobook and Zenbook ASUS laptops that expose the HID LampArray interface.
+Vivobook ASUS laptops that expose the HID LampArray interface.
 
 
 **Why this exists:**
 
 I bought a Vivobook S14 and put Fedora on it for school and work. Fn brightness worked, but the keyboard was stuck on white and none of the usual ASUS RGB tools did anything. After digging into it, I found the keyboard wasn’t using the typical ASUS control path at all.
 
-VRGB is just a small script built around that discovery to get simple RGB control working on Linux without touching the kernel or running a daemon.
+VRGB is just a tool built around that discovery to get simple RGB control working on Linux without touching the kernel or running a daemon.
 
 <br>
 
 **The project was developed and validated on:**
 
-ASUS Vivobook S14 (S5406SA-WH79)
+ITE5570 (HID_ID: 0018:00000B05:000019B6)  
+- ASUS Vivobook S14 (S5406SA-WH79)  
+- firmware: 0x0B  
+- color: 0x05  
 
-Keyboard controller: ITE5570
+**Community validated:**
+
+ITE5570 (HID_ID: 0018:00000B05:00005570)  
+- ASUS Vivobook S16 series (M5606K / M5606WA)  
+- firmware: 0x46  
+- color: 0x45  
+- note: OEM rainbow may not function on all models  
 
 <br>
 
@@ -43,7 +52,7 @@ Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, b
        ↓
     RGB lighting
 
-Current Stable Release: v.0.3
+Current Stable Release: v.0.3.1
     
 
 ## Example Usage
@@ -70,31 +79,45 @@ Current Stable Release: v.0.3
 
 ## Supported Hardware
 
-Currently validated on:
+VRGB supports ASUS laptops that expose the **ITE5570 HID LampArray controller**.
 
--   ASUS Vivobook S14 (S5406SA)
--   Keyboard controller: ITE5570
--   Interface: HID LampArray (Usage Page 0x59)
+Support is based on **verified device mappings**, not specific laptop models.
 
-Example device identifiers:
+### Verified mappings
+
+**ITE5570 (HID_ID: 0018:00000B05:000019B6)**  
+- confirmed on: ASUS Vivobook S14 (S5406SA)  
+- firmware report: `0x0B`  
+- color report: `0x05`
+
+**ITE5570 (HID_ID: 0018:00000B05:00005570)**  
+- confirmed on: ASUS Vivobook S16 series (M5606K / M5606WA)  
+- firmware report: `0x46`  
+- color report: `0x45`  
+- note: OEM rainbow mode may not function on all models
+
+### Example device identifiers
 
     HID_NAME=ITE5570:00 0B05:19B6
     HID_ID=0018:00000B05:000019B6
 
 
-
 ## Compatibility
 
-VRGB scans available hidraw devices and selects the matching ASUS keyboard controller automatically.
+VRGB scans available `hidraw` devices and selects compatible ASUS keyboard controllers automatically.
 
-Other ASUS laptops using the same controller may work but require
-testing. Community reports are more than welcome. If vrgb works (or doesn't work) on your system, please click the Hardware Compatibility Reports issue below and post your *vrgb --debug status* output. This will help the project immensely.
+Multiple ASUS laptops appear to share the same ITE5570 controller and HID LampArray protocol. If your system exposes a similar device, there is a strong chance VRGB will work.
 
-Hardware support will expand over time. Stability and correctness are prioritized over broad but unreliable compatibility.
+Support expands through **verified device mappings** as new hardware is tested. Stability and correctness are prioritized over broad but unreliable compatibility.
 
-See community reports here:  
+If VRGB works (or does not work) on your system, please submit a compatibility report including:
+
+    vrgb --debug status
+
+Community reports help identify new supported devices quickly.
+
+See reports here:  
 https://github.com/vrgb-dev/vrgb/issues/1
-
 
 
 ## Quick Install
@@ -252,6 +275,16 @@ With future updates in mind, this project will aim to continue to be as efficien
 
 
 ## Changelog
+
+v0.3.1
+
+- introduced multi-device support architecture
+- replaced hardcoded HID targeting with device mappings
+- added support for ITE5570 (0x5570) devices
+- confirmed working on additional Vivobook S16 hardware (community tested)
+- refactored device detection to return structured device info
+- eliminated global report ID assumptions
+- no behavioral changes for existing supported devices
 
 v0.3
 
