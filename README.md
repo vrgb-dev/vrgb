@@ -58,7 +58,7 @@ Current Stable Release: v.0.3.1
 ## Example Usage
 
 <p align="center">
-  <img src="assets/vrgb-demo.png" width="550">
+  <img src="assets/vrgb-demo.png" width="400">
 </p>
 
 
