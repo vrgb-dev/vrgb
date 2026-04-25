@@ -38,6 +38,7 @@ def get_real_home() -> Path:
 
 CONFIG_DIR = get_real_home() / ".config" / "vrgb"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+CYCLE_PID_FILE = CONFIG_DIR / "cycle.pid"
 
 SUPPORTED_DEVICES = {
     "0018:00000B05:000019B6": {
@@ -626,6 +627,86 @@ def cmd_rainbow(cfg, devinfo, state):
         save_config(cfg)
 
 
+def _cycle_stop_existing():
+    """Kill a running cycle daemon if one exists. Returns True if killed."""
+    if not CYCLE_PID_FILE.exists():
+        return False
+    try:
+        pid = int(CYCLE_PID_FILE.read_text().strip())
+        os.kill(pid, 0)   # check the process is still alive
+    except (ValueError, ProcessLookupError, PermissionError):
+        CYCLE_PID_FILE.unlink(missing_ok=True)
+        return False
+    try:
+        import signal as _sig
+        os.kill(pid, _sig.SIGTERM)
+    except ProcessLookupError:
+        pass
+    CYCLE_PID_FILE.unlink(missing_ok=True)
+    return True
+
+
+def _cycle_daemon(devinfo, speed: float, brightness: int):
+    """Colour-cycle loop — runs inside the forked daemon process."""
+    import colorsys, signal as _sig, time as _time
+
+    intensity = round(clamp(brightness, 0, 100) * 255 / 100)
+    step = 0.002 * speed
+    delay = max(0.005, 0.016 / speed)
+
+    def _send(r, g, b):
+        hid_set_feature(
+            devinfo["path"],
+            devinfo["color_report_id"],
+            bytes([0x01, 0x00, 0x00, 0x00, 0x00, r & 255, g & 255, b & 255, intensity]),
+        )
+
+    set_firmware_mode(devinfo, False)
+
+    hue = 0.0
+    while True:
+        r_f, g_f, b_f = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+        _send(round(r_f * 255), round(g_f * 255), round(b_f * 255))
+        hue = (hue + step) % 1.0
+        _time.sleep(delay)
+
+
+def cmd_cycle(cfg, devinfo, state, speed: float = 1.0, brightness: int = 100):
+    debug(f"cmd_cycle state={state} speed={speed} brightness={brightness}")
+
+    if state == "off":
+        if _cycle_stop_existing():
+            print("Colour cycle stopped.")
+        else:
+            print("No colour cycle is running.")
+        return
+
+    # state == "on"
+    _cycle_stop_existing()   # stop old one if running
+
+    pid = os.fork()
+    if pid > 0:
+        # Parent: write PID file and exit
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        CYCLE_PID_FILE.write_text(str(pid))
+        print(f"Colour cycle started (pid {pid}, speed={speed}×, brightness={brightness}%).")
+        return
+
+    # Child: become a daemon
+    os.setsid()
+    # Redirect stdio so the terminal isn't blocked
+    devnull = os.open(os.devnull, os.O_RDWR)
+    for fd in (0, 1, 2):
+        os.dup2(devnull, fd)
+    os.close(devnull)
+
+    try:
+        _cycle_daemon(devinfo, speed, brightness)
+    except Exception:
+        pass
+    os._exit(0)
+
+
 def cmd_off(cfg, devinfo):
     r, g, b = hex_to_rgb(cfg["color"])
     debug("cmd_off")
@@ -679,6 +760,8 @@ def main():
   vrgb brightness 0-100
   vrgb auto on|off
   vrgb rainbow on|off
+  vrgb cycle on [speed] [brightness]
+  vrgb cycle off
   vrgb off
   vrgb restore
   vrgb profile save NAME
@@ -703,6 +786,7 @@ Example: vrgb --debug status
         "brightness",
         "auto",
         "rainbow",
+        "cycle",
         "off",
         "restore",
         "profile",
@@ -740,6 +824,20 @@ Example: vrgb --debug status
             die("rainbow requires 'on' or 'off'")
         devinfo = find_device()
         cmd_rainbow(cfg, devinfo, args[1])
+
+    elif cmd == "cycle":
+        if len(args) < 2 or args[1] not in ["on", "off"]:
+            die("cycle requires 'on' or 'off'")
+        if args[1] == "off":
+            cmd_cycle(cfg, None, "off")
+        else:
+            devinfo = find_device()
+            try:
+                speed = float(args[2]) if len(args) > 2 else 1.0
+                brightness = int(args[3]) if len(args) > 3 else 100
+            except ValueError:
+                die("cycle speed must be a number and brightness an integer 0-100")
+            cmd_cycle(cfg, devinfo, "on", speed=speed, brightness=brightness)
 
     elif cmd == "off":
         devinfo = find_device()
