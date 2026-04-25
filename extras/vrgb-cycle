@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+"""
+vrgb-cycle — smooth HSV colour wheel for single-zone ASUS keyboards.
+
+Requires vrgb to be installed and the keyboard accessible via hidraw.
+
+Usage:
+  vrgb-cycle                     default speed, 100% brightness
+  vrgb-cycle --speed 2           2× faster
+  vrgb-cycle --speed 0.3         slow fade
+  vrgb-cycle --brightness 60     dimmer
+
+Press Ctrl+C to stop; vrgb restore runs automatically.
+"""
+
+import argparse
+import colorsys
+import fcntl
+import os
+import signal
+import sys
+import time
+from pathlib import Path
+
+
+DEV_GLOB = "/sys/class/hidraw"
+HIDIOCSFEATURE = lambda n: 0xC0004806 | (n << 16)
+
+TARGET_HID_ID = "0018:00000B05:000019B6"
+
+
+def find_hidraw() -> str:
+    base = Path(DEV_GLOB)
+    for dev in sorted(base.iterdir()):
+        uevent = dev / "device" / "uevent"
+        if not uevent.exists():
+            continue
+        txt = uevent.read_text(errors="ignore")
+        for line in txt.splitlines():
+            if line.startswith("HID_ID=") and TARGET_HID_ID in line:
+                return f"/dev/{dev.name}"
+    raise RuntimeError(
+        "VRGB keyboard not found. Is asus-nb-wmi loaded?\n"
+        "  sudo modprobe asus-nb-wmi"
+    )
+
+
+def send(fd, r: int, g: int, b: int, intensity: int) -> None:
+    buf = bytes([0x05, 0x01, 0x00, 0x00, 0x00, 0x00,
+                 r & 255, g & 255, b & 255, intensity & 255])
+    fcntl.ioctl(fd, HIDIOCSFEATURE(len(buf)), buf)
+
+
+def set_host_mode(fd) -> None:
+    buf = bytes([0x0B, 0x00])
+    fcntl.ioctl(fd, HIDIOCSFEATURE(len(buf)), buf)
+
+
+def restore() -> None:
+    os.system("vrgb restore 2>/dev/null")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Smooth HSV colour cycle for ASUS Vivobook S14 keyboard"
+    )
+    parser.add_argument("--speed", type=float, default=1.0,
+                        help="Speed multiplier (default 1.0)")
+    parser.add_argument("--brightness", type=int, default=100,
+                        help="Brightness 0–100 (default 100)")
+    args = parser.parse_args()
+
+    intensity = round(max(0, min(100, args.brightness)) * 255 / 100)
+    step = 0.002 * args.speed
+    delay = max(0.005, 0.016 / args.speed)
+
+    try:
+        path = find_hidraw()
+    except RuntimeError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        fd = os.open(path, os.O_RDWR | os.O_CLOEXEC)
+    except OSError as e:
+        print(f"Cannot open {path}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+
+    set_host_mode(fd)
+    print(f"Colour cycle on {path}  speed={args.speed}×  brightness={args.brightness}%")
+    print("Ctrl+C to stop.")
+
+    hue = 0.0
+    try:
+        while True:
+            r_f, g_f, b_f = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+            send(fd, round(r_f * 255), round(g_f * 255), round(b_f * 255), intensity)
+            hue = (hue + step) % 1.0
+            time.sleep(delay)
+    except KeyboardInterrupt:
+        print("\nStopped. Restoring saved colour...")
+        os.close(fd)
+        restore()
+
+
+if __name__ == "__main__":
+    main()

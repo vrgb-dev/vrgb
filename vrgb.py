@@ -45,6 +45,14 @@ SUPPORTED_DEVICES = {
         "model": "ASUS Vivobook S14 (S5406SA)",
         "firmware_report_id": 0x0B,
         "color_report_id": 0x05,
+        # The ITE5570 I2C-HID firmware ignores all LampArray HID reports
+        # (0x04, 0x05, 0x0B) until asus-nb-wmi initialises the hardware via
+        # WMI on module load.  Without it, vrgb commands succeed silently but
+        # the keyboard colour never changes.
+        "required_modules": ["asus-nb-wmi"],
+        # WMI dev_id 0x0005002f (OEM rainbow) returns 0x0 on this model —
+        # the firmware does not implement this method.
+        "rainbow_supported": False,
     },
     "0018:00000B05:00005570": {
         "hid_name": "ITE5570:00 0B05:5570",
@@ -227,6 +235,33 @@ def get_saved_static_state(cfg):
     return r, g, b, p, intensity
 
 
+# ===== Kernel modules =====
+
+
+def _module_loaded(name: str) -> bool:
+    return Path(f"/sys/module/{name.replace('-', '_')}").exists()
+
+
+def ensure_required_modules(profile: dict):
+    missing = [
+        m for m in profile.get("required_modules", [])
+        if not _module_loaded(m)
+    ]
+    if not missing:
+        return
+
+    mods = " ".join(missing)
+    print(
+        f"Error: the following kernel module(s) must be loaded before this\n"
+        f"device will accept colour commands: {', '.join(missing)}\n\n"
+        f"  Load once:    sudo modprobe {mods}\n"
+        f"  Load at boot: echo '{missing[0]}' | "
+        f"sudo tee /etc/modules-load.d/{missing[0]}.conf",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
 # ===== HID =====
 
 
@@ -301,6 +336,7 @@ def find_device():
             f"color=0x{best_match['color_report_id']:02X}"
         )
         debug(f"Matched model: {best_match['model']}")
+        ensure_required_modules(SUPPORTED_DEVICES.get(best_match["hid_id"], {}))
         return best_match
 
     die("VRGB HID device not found")
@@ -569,6 +605,10 @@ def cmd_auto(cfg, devinfo, state):
 def cmd_rainbow(cfg, devinfo, state):
     enable = state == "on"
     debug(f"cmd_rainbow state={state}")
+
+    profile = SUPPORTED_DEVICES.get(devinfo.get("hid_id", ""), {})
+    if enable and not profile.get("rainbow_supported", True):
+        die(f"OEM rainbow is not supported on {devinfo['model']}.")
 
     if enable:
         set_firmware_mode(devinfo, True)
