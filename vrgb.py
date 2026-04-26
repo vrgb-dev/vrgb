@@ -38,7 +38,8 @@ def get_real_home() -> Path:
 
 CONFIG_DIR = get_real_home() / ".config" / "vrgb"
 CONFIG_FILE = CONFIG_DIR / "config.json"
-CYCLE_PID_FILE = CONFIG_DIR / "cycle.pid"
+CYCLE_PID_FILE   = CONFIG_DIR / "cycle.pid"
+AMBIENT_PID_FILE = CONFIG_DIR / "ambient.pid"
 
 SUPPORTED_DEVICES = {
     "0018:00000B05:000019B6": {
@@ -629,21 +630,7 @@ def cmd_rainbow(cfg, devinfo, state):
 
 def _cycle_stop_existing():
     """Kill a running cycle daemon if one exists. Returns True if killed."""
-    if not CYCLE_PID_FILE.exists():
-        return False
-    try:
-        pid = int(CYCLE_PID_FILE.read_text().strip())
-        os.kill(pid, 0)   # check the process is still alive
-    except (ValueError, ProcessLookupError, PermissionError):
-        CYCLE_PID_FILE.unlink(missing_ok=True)
-        return False
-    try:
-        import signal as _sig
-        os.kill(pid, _sig.SIGTERM)
-    except ProcessLookupError:
-        pass
-    CYCLE_PID_FILE.unlink(missing_ok=True)
-    return True
+    return _stop_pid_file(CYCLE_PID_FILE)
 
 
 def _cycle_daemon(devinfo, speed: float, brightness: int):
@@ -707,6 +694,138 @@ def cmd_cycle(cfg, devinfo, state, speed: float = 1.0, brightness: int = 100):
     os._exit(0)
 
 
+# ===== Ambient (screen colour sync) =====
+
+
+def _screen_dominant_color():
+    """
+    Capture the screen, find the dominant vivid colour, and return (r, g, b).
+    Ignores blacks, whites, and grays — only counts saturated pixels.
+    Falls back to average RGB if the screen is mostly monochrome.
+    Raises RuntimeError if no screenshot backend is available.
+    """
+    import colorsys as _cs
+
+    # Capture via PIL ImageGrab (X11) — resize to 64×64 for speed
+    try:
+        from PIL import ImageGrab as _IG
+        img = _IG.grab().resize((64, 64))
+        pixels = list(img.getdata())
+    except Exception as e:
+        raise RuntimeError(
+            f"Cannot capture screen ({e}).\n"
+            "Make sure Pillow is installed:  pip install Pillow"
+        )
+
+    # Keep only vivid pixels: not too dark, not too grey
+    vivid_hues = []
+    for r, g, b in pixels:
+        h, s, v = _cs.rgb_to_hsv(r / 255, g / 255, b / 255)
+        if s > 0.30 and v > 0.15:
+            vivid_hues.append(h)
+
+    if len(vivid_hues) < 10:
+        # Mostly monochrome — return average brightness as white-ish
+        avg_r = sum(p[0] for p in pixels) // len(pixels)
+        avg_g = sum(p[1] for p in pixels) // len(pixels)
+        avg_b = sum(p[2] for p in pixels) // len(pixels)
+        return avg_r, avg_g, avg_b
+
+    # Histogram over 36 hue bins (10° each) — find the most common hue
+    bins = [0] * 36
+    for h in vivid_hues:
+        bins[int(h * 36) % 36] += 1
+    best_bin = max(range(36), key=lambda i: bins[i])
+    dominant_hue = (best_bin + 0.5) / 36
+
+    # Return as a fully saturated, full-brightness colour for the keyboard
+    rf, gf, bf = _cs.hsv_to_rgb(dominant_hue, 1.0, 1.0)
+    return round(rf * 255), round(gf * 255), round(bf * 255)
+
+
+def _stop_pid_file(pid_file: Path) -> bool:
+    """Kill process stored in pid_file. Returns True if killed."""
+    if not pid_file.exists():
+        return False
+    try:
+        pid = int(pid_file.read_text().strip())
+        os.kill(pid, 0)
+    except (ValueError, ProcessLookupError, PermissionError):
+        pid_file.unlink(missing_ok=True)
+        return False
+    try:
+        import signal as _sig
+        os.kill(pid, _sig.SIGTERM)
+    except ProcessLookupError:
+        pass
+    pid_file.unlink(missing_ok=True)
+    return True
+
+
+def _ambient_daemon(devinfo, interval: float, brightness: int):
+    """Ambient loop — runs inside the forked daemon process."""
+    import time as _t
+
+    intensity = round(clamp(brightness, 0, 100) * 255 / 100)
+    set_firmware_mode(devinfo, False)
+
+    while True:
+        try:
+            r, g, b = _screen_dominant_color()
+            hid_set_feature(
+                devinfo["path"],
+                devinfo["color_report_id"],
+                bytes([0x01, 0x00, 0x00, 0x00, 0x00, r, g, b, intensity]),
+            )
+        except Exception:
+            pass
+        _t.sleep(interval)
+
+
+def cmd_ambient(cfg, devinfo, state, interval: float = 2.0, brightness: int = 100):
+    debug(f"cmd_ambient state={state} interval={interval} brightness={brightness}")
+
+    if state == "off":
+        if _stop_pid_file(AMBIENT_PID_FILE):
+            print("Ambient sync stopped.")
+        else:
+            print("No ambient sync is running.")
+        return
+
+    # Stop any running ambient first
+    _stop_pid_file(AMBIENT_PID_FILE)
+
+    # Verify screenshot works before forking
+    try:
+        r, g, b = _screen_dominant_color()
+        debug(f"ambient test ok — dominant #{r:02x}{g:02x}{b:02x}")
+    except RuntimeError as e:
+        die(str(e))
+
+    pid = os.fork()
+    if pid > 0:
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        AMBIENT_PID_FILE.write_text(str(pid))
+        print(
+            f"Ambient sync started (pid {pid}, "
+            f"every {interval}s, brightness={brightness}%)."
+        )
+        return
+
+    # Child daemon
+    os.setsid()
+    devnull = os.open(os.devnull, os.O_RDWR)
+    for fd in (0, 1, 2):
+        os.dup2(devnull, fd)
+    os.close(devnull)
+
+    try:
+        _ambient_daemon(devinfo, interval, brightness)
+    except Exception:
+        pass
+    os._exit(0)
+
+
 def cmd_off(cfg, devinfo):
     r, g, b = hex_to_rgb(cfg["color"])
     debug("cmd_off")
@@ -762,6 +881,8 @@ def main():
   vrgb rainbow on|off
   vrgb cycle on [speed] [brightness]
   vrgb cycle off
+  vrgb ambient on [interval] [brightness]
+  vrgb ambient off
   vrgb off
   vrgb restore
   vrgb profile save NAME
@@ -787,6 +908,7 @@ Example: vrgb --debug status
         "auto",
         "rainbow",
         "cycle",
+        "ambient",
         "off",
         "restore",
         "profile",
@@ -838,6 +960,20 @@ Example: vrgb --debug status
             except ValueError:
                 die("cycle speed must be a number and brightness an integer 0-100")
             cmd_cycle(cfg, devinfo, "on", speed=speed, brightness=brightness)
+
+    elif cmd == "ambient":
+        if len(args) < 2 or args[1] not in ["on", "off"]:
+            die("ambient requires 'on' or 'off'")
+        if args[1] == "off":
+            cmd_ambient(cfg, None, "off")
+        else:
+            devinfo = find_device()
+            try:
+                interval = float(args[2]) if len(args) > 2 else 2.0
+                brightness = int(args[3]) if len(args) > 3 else 100
+            except ValueError:
+                die("ambient interval must be a number and brightness an integer 0-100")
+            cmd_ambient(cfg, devinfo, "on", interval=interval, brightness=brightness)
 
     elif cmd == "off":
         devinfo = find_device()
