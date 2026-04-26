@@ -14,7 +14,7 @@ Vivobook ASUS laptops that expose the HID LampArray interface.
 
 **Why this exists:**
 
-I bought a Vivobook S14 and put Fedora on it for school and work. Fn brightness worked, but the keyboard was stuck on white and none of the usual ASUS RGB tools did anything. After digging into it, I found the keyboard wasn’t using the typical ASUS control path at all.
+I bought a Vivobook S14 and put Fedora on it for school and work. Fn brightness worked, but the keyboard was stuck on white and none of the usual ASUS RGB tools did anything. After digging into it, I found the keyboard wasn't using the typical ASUS control path at all.
 
 VRGB is just a tool built around that discovery to get simple RGB control working on Linux without touching the kernel or running a daemon.
 
@@ -37,7 +37,7 @@ ITE5570 (HID_ID: 0018:00000B05:00005570)
 
 <br>
 
-Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, background daemons, controller hacks, or reverse-engineered Windows drivers. VRGB simply communicates with the keyboard controller through the Linux HID subsystem. 
+Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, controller hacks, or reverse-engineered Windows drivers. VRGB simply communicates with the keyboard controller through the Linux HID subsystem. 
 
 <br>
 
@@ -52,7 +52,7 @@ Unlike some RGB tools, VRGB does not rely on kernel patches, vendor utilities, b
        ↓
     RGB lighting
 
-Current Stable Release: v.0.3.1
+Current Stable Release: v0.4.0
     
 
 ## Example Usage
@@ -69,11 +69,13 @@ Current Stable Release: v.0.3.1
 -   Custom profiles
 -   Firmware autonomous mode toggle
 -   OEM rainbow toggle (sudo required)
+-   Smooth HSV color cycle (background daemon)
+-   Ambient screen color sync (background daemon)
 -   Debug diagnostics
 -   Persistent configuration
 -   Installer and uninstaller included
 -   Non-root daily usage via udev permissions
--   Optional KDE autostart restore
+-   Optional autostart restore
 
 
 
@@ -89,6 +91,7 @@ Support is based on **verified device mappings**, not specific laptop models.
 - confirmed on: ASUS Vivobook S14 (S5406SA)  
 - firmware report: `0x0B`  
 - color report: `0x05`
+- **requires:** `asus-nb-wmi` kernel module (see note below)
 
 **ITE5570 (HID_ID: 0018:00000B05:00005570)**  
 - confirmed on: ASUS Vivobook S16 series (M5606K / M5606WA)  
@@ -134,7 +137,24 @@ After installation log out and log back in so group permissions apply.
 
 **Note:**
 Keyboard color persists on reboot, but may reset to firmware default after a full power cycle.
-Use the KDE autostart option in the installer (or set it manually) to reapply your configuration automatically.
+Use the autostart option in the installer (or set it manually) to reapply your configuration automatically.
+
+
+### Note for ASUS Vivobook S14 (HID_ID: 0018:00000B05:000019B6)
+
+The ITE5570 I2C-HID firmware on this device ignores all LampArray HID commands until
+the `asus-nb-wmi` kernel module initializes the hardware via WMI.
+Without it, commands complete without error but the keyboard color never changes.
+
+Load the module once:
+
+    sudo modprobe asus-nb-wmi
+
+Load it automatically at boot:
+
+    echo 'asus-nb-wmi' | sudo tee /etc/modules-load.d/asus-nb-wmi.conf
+
+VRGB will print a clear error message if the module is missing.
 
 
 
@@ -180,7 +200,7 @@ Restore Saved State
 
     vrgb restore
 
-Enable firmware lighting (Firmware Autonomous Mode)
+Enable Firmware Lighting (Firmware Autonomous Mode)
 
     vrgb auto on
 
@@ -192,6 +212,44 @@ OEM Rainbow Mode (requires sudo)
 
     sudo vrgb rainbow on
     sudo vrgb rainbow off
+
+Smooth HSV Color Cycle
+
+Starts a background process that smoothly cycles through the full color wheel.
+
+    vrgb cycle on [speed] [brightness]
+    vrgb cycle off
+
+*Examples:*
+
+    vrgb cycle on            # default speed, 100% brightness
+    vrgb cycle on 2 80       # 2× faster, 80% brightness
+    vrgb cycle on 0.3        # slow fade
+
+Ambient Screen Color Sync
+
+Starts a background process that reads the dominant vivid color from the screen
+and sets the keyboard to match — updating smoothly at the given interval.
+Requires Pillow: `pip install Pillow`
+
+    vrgb ambient on [--interval S] [--brightness N] [--transition S]
+    vrgb ambient off
+
+*Options:*
+
+| Flag | Default | Description |
+|---|---|---|
+| `--interval` | `0.5` | Seconds between screen captures |
+| `--brightness` | `100` | Keyboard brightness 0–100 |
+| `--transition` | `1.0` | Seconds to lerp from old color to new color |
+
+*Examples:*
+
+    vrgb ambient on                                   # defaults
+    vrgb ambient on --interval 1 --transition 2       # slower, smoother
+    vrgb ambient on --interval 0.3 --brightness 70    # fast capture, dimmer
+
+`cycle` and `ambient` are mutually exclusive — starting one stops the other automatically.
 
 Debug Mode
 
@@ -232,11 +290,11 @@ Log out and log back in afterward.
 
 
 
-## Optional KDE Autostart Restore
+## Optional Autostart Restore
 
 Create:
 
-    ~/.config/autostart/vrgb.desktop
+    ~/.config/autostart/vrgb-restore.desktop
 
 Contents:
 
@@ -263,18 +321,17 @@ Removes:
 
 
 
-## Future Development
-
-- expanded ASUS hardware compatibility
-- GUI frontend
-- breathing / fade effects
-- effect profiles
-
-With future updates in mind, this project will aim to continue to be as efficient and lightweight as possible.
-
-
-
 ## Changelog
+
+v0.4.0
+
+- fix(ITE5570/I2C): `asus-nb-wmi` kernel module is now required for HID_ID `0018:00000B05:000019B6`; vrgb prints a clear error with load instructions if it is missing
+- fix: OEM rainbow (`vrgb rainbow on`) now prints an error instead of silently doing nothing on devices where WMI dev_id `0x0005002f` is unsupported
+- feat: `vrgb cycle on/off` — smooth HSV color wheel running as a background daemon
+- feat: `vrgb ambient on/off` — screen dominant vivid color sync running as a background daemon; supports `--interval`, `--brightness`, `--transition` flags
+- `cycle` and `ambient` are mutually exclusive; starting one stops the other
+- added `extras/vrgb-cycle` standalone script
+- version bump: 0.3.1 → 0.4.0
 
 v0.3.1
 

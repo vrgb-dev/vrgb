@@ -73,7 +73,7 @@ ASUS_WMI_DEV_ID = ASUS_WMI_BASE / "dev_id"
 ASUS_WMI_CTRL_PARAM = ASUS_WMI_BASE / "ctrl_param"
 ASUS_WMI_DEVS = ASUS_WMI_BASE / "devs"
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 PROJECT_URL = "https://github.com/vrgb-dev/vrgb"
 
 # ===== Utilities =====
@@ -532,7 +532,7 @@ Version: """
         + PROJECT_URL
         + """
 
-No kernel mods. No daemon. Just HID.
+No kernel mods. Just HID.
 """
     )
 
@@ -669,7 +669,8 @@ def cmd_cycle(cfg, devinfo, state, speed: float = 1.0, brightness: int = 100):
         return
 
     # state == "on"
-    _cycle_stop_existing()   # stop old one if running
+    _cycle_stop_existing()          # stop old cycle if running
+    _stop_pid_file(AMBIENT_PID_FILE)  # stop ambient if running
 
     pid = os.fork()
     if pid > 0:
@@ -762,27 +763,49 @@ def _stop_pid_file(pid_file: Path) -> bool:
     return True
 
 
-def _ambient_daemon(devinfo, interval: float, brightness: int):
+def _ambient_daemon(devinfo, interval: float, brightness: int, transition: float):
     """Ambient loop — runs inside the forked daemon process."""
     import time as _t
 
     intensity = round(clamp(brightness, 0, 100) * 255 / 100)
     set_firmware_mode(devinfo, False)
 
+    RENDER_FPS = 30
+    render_delay = 1.0 / RENDER_FPS
+    # alpha per frame: transition controls how long lerp takes
+    alpha = render_delay / max(transition, render_delay)
+
+    cur = [0.0, 0.0, 0.0]   # current displayed colour (float for smooth math)
+    tgt = [0.0, 0.0, 0.0]   # latest captured target colour
+
+    last_capture = 0.0
+
     while True:
-        try:
-            r, g, b = _screen_dominant_color()
-            hid_set_feature(
-                devinfo["path"],
-                devinfo["color_report_id"],
-                bytes([0x01, 0x00, 0x00, 0x00, 0x00, r, g, b, intensity]),
-            )
-        except Exception:
-            pass
-        _t.sleep(interval)
+        now = _t.time()
+        if now - last_capture >= interval:
+            try:
+                r, g, b = _screen_dominant_color()
+                tgt = [float(r), float(g), float(b)]
+                last_capture = now
+            except Exception:
+                pass
+
+        # Lerp current toward target
+        cur[0] += (tgt[0] - cur[0]) * alpha
+        cur[1] += (tgt[1] - cur[1]) * alpha
+        cur[2] += (tgt[2] - cur[2]) * alpha
+
+        hid_set_feature(
+            devinfo["path"],
+            devinfo["color_report_id"],
+            bytes([0x01, 0x00, 0x00, 0x00, 0x00,
+                   round(cur[0]) & 255, round(cur[1]) & 255, round(cur[2]) & 255,
+                   intensity]),
+        )
+        _t.sleep(render_delay)
 
 
-def cmd_ambient(cfg, devinfo, state, interval: float = 2.0, brightness: int = 100):
+def cmd_ambient(cfg, devinfo, state, interval: float = 0.5, brightness: int = 100, transition: float = 1.0):
     debug(f"cmd_ambient state={state} interval={interval} brightness={brightness}")
 
     if state == "off":
@@ -792,8 +815,9 @@ def cmd_ambient(cfg, devinfo, state, interval: float = 2.0, brightness: int = 10
             print("No ambient sync is running.")
         return
 
-    # Stop any running ambient first
+    # Stop any running ambient or cycle first
     _stop_pid_file(AMBIENT_PID_FILE)
+    _cycle_stop_existing()
 
     # Verify screenshot works before forking
     try:
@@ -808,7 +832,7 @@ def cmd_ambient(cfg, devinfo, state, interval: float = 2.0, brightness: int = 10
         AMBIENT_PID_FILE.write_text(str(pid))
         print(
             f"Ambient sync started (pid {pid}, "
-            f"every {interval}s, brightness={brightness}%)."
+            f"interval={interval}s, transition={transition}s, brightness={brightness}%)."
         )
         return
 
@@ -820,7 +844,7 @@ def cmd_ambient(cfg, devinfo, state, interval: float = 2.0, brightness: int = 10
     os.close(devnull)
 
     try:
-        _ambient_daemon(devinfo, interval, brightness)
+        _ambient_daemon(devinfo, interval, brightness, transition)
     except Exception:
         pass
     os._exit(0)
@@ -881,7 +905,7 @@ def main():
   vrgb rainbow on|off
   vrgb cycle on [speed] [brightness]
   vrgb cycle off
-  vrgb ambient on [interval] [brightness]
+  vrgb ambient on [--interval S] [--brightness N] [--transition S]
   vrgb ambient off
   vrgb off
   vrgb restore
@@ -968,12 +992,24 @@ Example: vrgb --debug status
             cmd_ambient(cfg, None, "off")
         else:
             devinfo = find_device()
+            interval   = 0.5
+            brightness = 100
+            transition = 1.0
+            flags = args[2:]
+            i = 0
             try:
-                interval = float(args[2]) if len(args) > 2 else 2.0
-                brightness = int(args[3]) if len(args) > 3 else 100
+                while i < len(flags):
+                    if flags[i] == "--interval" and i + 1 < len(flags):
+                        interval = float(flags[i + 1]); i += 2
+                    elif flags[i] == "--brightness" and i + 1 < len(flags):
+                        brightness = int(flags[i + 1]); i += 2
+                    elif flags[i] == "--transition" and i + 1 < len(flags):
+                        transition = float(flags[i + 1]); i += 2
+                    else:
+                        die(f"Unknown ambient option: {flags[i]}")
             except ValueError:
-                die("ambient interval must be a number and brightness an integer 0-100")
-            cmd_ambient(cfg, devinfo, "on", interval=interval, brightness=brightness)
+                die("ambient --interval and --transition must be numbers, --brightness an integer 0-100")
+            cmd_ambient(cfg, devinfo, "on", interval=interval, brightness=brightness, transition=transition)
 
     elif cmd == "off":
         devinfo = find_device()

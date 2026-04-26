@@ -6,7 +6,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "VRGB Installer (v0.3) (v0.3)"
+echo "VRGB Installer (v0.4.0)"
 echo "---------------"
 
 # Ensure script exists
@@ -65,3 +65,8 @@ echo "Installation complete."
 echo
 echo "IMPORTANT:"
 echo "Log out and log back in for group membership to apply."
+echo
+echo "NOTE (ASUS Vivobook S14 / HID_ID 0018:00000B05:000019B6):"
+echo "This device requires the asus-nb-wmi kernel module to accept colour commands."
+echo "  Load once:    sudo modprobe asus-nb-wmi"
+echo "  Load at boot: echo 'asus-nb-wmi' | sudo tee /etc/modules-load.d/asus-nb-wmi.conf"
