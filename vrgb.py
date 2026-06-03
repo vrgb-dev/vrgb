@@ -27,12 +27,23 @@ def HIDIOCSFEATURE(length: int) -> int:
 
 
 def get_real_home() -> Path:
+    # Resolve the invoking user's home even when elevated, so config lives under
+    # the real user's ~/.config and not /root. sudo sets SUDO_USER; pkexec scrubs
+    # the environment but sets PKEXEC_UID.
     sudo_user = os.environ.get("SUDO_USER")
     if sudo_user:
         try:
             return Path(pwd.getpwnam(sudo_user).pw_dir)
         except KeyError:
             pass
+
+    pkexec_uid = os.environ.get("PKEXEC_UID")
+    if pkexec_uid:
+        try:
+            return Path(pwd.getpwuid(int(pkexec_uid)).pw_dir)
+        except (KeyError, ValueError):
+            pass
+
     return Path.home()
 
 

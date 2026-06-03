@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=VRGB
+GenericName=Keyboard RGB Control
+Comment=Control your ASUS Vivobook RGB keyboard
+Exec=/usr/local/bin/vrgb-gui
+Icon=vrgb
+Terminal=false
+Categories=Utility;Settings;HardwareSettings;
+Keywords=rgb;keyboard;led;backlight;asus;vivobook;color;
+StartupNotify=true

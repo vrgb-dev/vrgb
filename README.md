@@ -169,6 +169,45 @@ Use the KDE autostart option in the installer (or set it manually) to reapply yo
 
 
 
+## Graphical Interface (vrgb-gui)
+
+A PyQt6 desktop frontend is included. It is a thin GUI over the CLI: it imports
+`vrgb` as a module and drives the keyboard in-process, so the HID protocol and
+config logic are shared with the command line — no duplicated device code.
+
+**Features**
+
+- HS color wheel + value slider, hex entry, and preset swatches
+- Live preview while you drag (throttled), persisted on release
+- Unified brightness slider (0–100%) that is **tied to the FN+F4 / FN+F3 keys**: it
+  decomposes brightness into the firmware backlight step (`asus::kbd_backlight`, set
+  via logind) and vrgb's HID intensity so the two layers never double-dim, and it
+  polls the firmware level so the hardware keys move the slider too. Falls back to
+  pure-HID brightness if the LED node / logind is unavailable.
+- A power on/off toggle
+- Firmware/autonomous mode toggle
+- OEM rainbow toggle (auto-disabled on device mappings that do not support it)
+- Profile manager (save / load / delete)
+- "Start at login" toggles (restore lighting / start tray) managed from inside the app
+- System-tray applet: on/off, a Brightness submenu (discrete steps, current one
+  ticked), a Color submenu (preset swatches + a "More colors…" dialog), and profile
+  loading; closing the window hides it to the tray. (The tray uses submenus rather
+  than embedded widgets because KDE renders tray menus over DBusMenu, which does not
+  support embedded slider/widget items.)
+- Falls back to a Polkit (`pkexec`) password prompt if the `vrgb` group is not yet
+  active in your session (i.e. before the first logout/login after install)
+
+**Install (after `./install.sh`)**
+
+    chmod +x install-gui.sh
+    ./install-gui.sh
+
+Requires `PyQt6` (`sudo dnf install python3-pyqt6` on Fedora). Launch it from your
+application menu (search "VRGB") or run `vrgb-gui`. Start the tray on login with
+the installer's autostart option, or run `vrgb-gui --tray`.
+
+
+
 ## Command List
 
 Show Current Status
@@ -297,9 +336,10 @@ Removes:
 ## Future Development
 
 - expanded ASUS hardware compatibility
-- simple GUI frontend
-- color picker / brightness control
-- profile management
+- ~~simple GUI frontend~~ — added (`vrgb-gui`, PyQt6)
+- ~~color picker / brightness control~~ — added
+- ~~profile management~~ — added (CLI + GUI)
+- packaged distribution (RPM / Flatpak)
 
 With future updates in mind, this project will aim to continue to be as efficient and lightweight as possible.
 
