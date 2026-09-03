@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.freedesktop.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.freedesktop.org/standards/kcfg/1.0
+                          http://www.freedesktop.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name=""/>
+    <group name="General">
+        <entry name="seededDefaults" type="Bool">
+            <label>Whether the built-in palette has already been turned into vrgb profiles.</label>
+            <default>false</default>
+        </entry>
+    </group>
+</kcfg>

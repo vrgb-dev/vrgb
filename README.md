@@ -63,6 +63,14 @@ Current Stable Release: v0.3.5
   <img src="assets/vrgb-demo.png" width="400">
 </p>
 
+<p align="center">
+  <img src="assets/plasma-widget-demo.png" width="400">
+</p>
+
+<p align="center">
+  <img src="assets/plasma-widget-colour-pick.png" width="400">
+</p>
+
 
 ## Features
 
@@ -77,6 +85,7 @@ Current Stable Release: v0.3.5
 -   Installer and uninstaller included
 -   Non-root daily usage via udev permissions
 -   Optional KDE autostart restore
+-   Optional KDE widget
 
 
 
@@ -162,6 +171,11 @@ Clone the repository and run the installer.
 
 After installation log out and log back in so group permissions apply.
 
+If want to install optional KDE widget
+
+    cd plasmoid
+    chmod +x install.sh
+    ./install.sh
 
 **Note:**
 Keyboard color persists on reboot, but may reset to firmware default after a full power cycle.
