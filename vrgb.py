@@ -5,6 +5,8 @@ import sys
 import json
 import fcntl
 import pwd
+import time
+import colorsys
 from pathlib import Path
 
 # ===== Debug =====
@@ -675,6 +677,55 @@ def cmd_rainbow(cfg, devinfo, state):
         save_config(cfg)
 
 
+def cmd_cycle(cfg, devinfo, percent=None, period=None, fps=None):
+    if percent is None:
+        percent = cfg["percent"]
+    if period is None:
+        period = 6.0
+    if fps is None:
+        fps = 20.0
+
+    percent = clamp(int(percent), 0, 100)
+    intensity = percent_to_intensity(percent)
+
+    try:
+        period = float(period)
+        fps = float(fps)
+    except (TypeError, ValueError):
+        die("period and fps must be numbers")
+
+    if period <= 0:
+        die("period must be greater than 0")
+    if fps <= 0:
+        die("fps must be greater than 0")
+
+    debug(f"cmd_cycle percent={percent} period={period} fps={fps}")
+
+    print(f"Cycling through the color spectrum (period={period}s, {fps} fps). Press Ctrl+C to stop.")
+
+    frame_delay = 1.0 / fps
+    start = time.monotonic()
+
+    try:
+        set_firmware_mode(devinfo, False)
+        while True:
+            try:
+                hue = ((time.monotonic() - start) / period) % 1.0
+                r, g, b = (round(c * 255) for c in colorsys.hsv_to_rgb(hue, 1.0, 1.0))
+                set_color(devinfo, r, g, b, intensity)
+            except OSError as e:
+                # The hidraw node can briefly disappear or re-enumerate
+                # around suspend/resume; reacquire it and keep cycling.
+                debug(f"cmd_cycle lost device ({e}); reacquiring")
+                time.sleep(1.0)
+                devinfo = find_device()
+                set_firmware_mode(devinfo, False)
+                continue
+            time.sleep(frame_delay)
+    except KeyboardInterrupt:
+        print("\nStopped cycling.")
+
+
 def cmd_off(cfg, devinfo):
     r, g, b = hex_to_rgb(cfg["color"])
     debug("cmd_off")
@@ -728,6 +779,7 @@ def main():
   vrgb brightness 0-100
   vrgb auto on|off
   vrgb rainbow on|off
+  vrgb cycle [percent] [period_seconds] [fps]
   vrgb off
   vrgb restore
   vrgb profile save NAME
@@ -752,6 +804,7 @@ Example: vrgb --debug status
         "brightness",
         "auto",
         "rainbow",
+        "cycle",
         "off",
         "restore",
         "profile",
@@ -789,6 +842,13 @@ Example: vrgb --debug status
             die("rainbow requires 'on' or 'off'")
         devinfo = find_device()
         cmd_rainbow(cfg, devinfo, args[1])
+
+    elif cmd == "cycle":
+        devinfo = find_device()
+        percent = args[1] if len(args) > 1 else None
+        period = args[2] if len(args) > 2 else None
+        fps = args[3] if len(args) > 3 else None
+        cmd_cycle(cfg, devinfo, percent, period, fps)
 
     elif cmd == "off":
         devinfo = find_device()
