@@ -67,6 +67,7 @@ Current Stable Release: v0.3.5
 ## Features
 
 -   Static RGB color control
+-   Software rainbow cycling with adjustable speed (works on all supported devices, no OEM firmware support required)
 -   Fine brightness scaling (0–100%)
 -   Custom profiles
 -   Firmware autonomous mode toggle
@@ -223,6 +224,20 @@ OEM Rainbow Mode (requires sudo)
 
     sudo vrgb rainbow on
     sudo vrgb rainbow off
+
+Software Rainbow Cycle (no sudo, works on all supported devices)
+
+    vrgb cycle [percent] [period_seconds] [fps]
+
+*Example (full brightness, one full color spectrum every 4 seconds):*
+
+    vrgb cycle 100 4
+
+Runs in the foreground until stopped with Ctrl+C. Unlike `rainbow`, this
+does not depend on OEM firmware support and gives full control over speed
+and brightness. To run it continuously in the background (e.g. across
+logins), manage it with a process supervisor such as a systemd `--user`
+service.
 
 Debug Mode
 
