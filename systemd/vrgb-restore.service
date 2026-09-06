@@ -1,0 +1,10 @@
+[Unit]
+Description=Restore VRGB keyboard lighting state
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/vrgb restore
+
+[Install]
+WantedBy=graphical-session.target

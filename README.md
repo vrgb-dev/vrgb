@@ -77,6 +77,7 @@ Current Stable Release: v0.3.5
 -   Installer and uninstaller included
 -   Non-root daily usage via udev permissions
 -   Optional KDE autostart restore
+-   Optional systemd user autostart restore (any desktop environment)
 
 
 
@@ -282,6 +283,41 @@ Contents:
 
 
 
+## Optional systemd Autostart Restore (any desktop environment)
+
+The KDE autostart option above relies on the XDG autostart spec, which not
+every window manager or compositor honors (tiling WMs such as Hyprland or
+Sway, for example). A systemd `--user` unit works the same way regardless
+of desktop environment, and the installer can set it up for you.
+
+Manual install:
+
+    mkdir -p ~/.config/systemd/user
+    install -m 644 systemd/vrgb-restore.service ~/.config/systemd/user/vrgb-restore.service
+    systemctl --user daemon-reload
+    systemctl --user enable vrgb-restore.service
+
+Contents of `systemd/vrgb-restore.service`:
+
+    [Unit]
+    Description=Restore VRGB keyboard lighting state
+    After=graphical-session.target
+
+    [Service]
+    Type=oneshot
+    ExecStart=/usr/local/bin/vrgb restore
+
+    [Install]
+    WantedBy=graphical-session.target
+
+The unit runs `vrgb restore` once at the start of your graphical session,
+so it will apply from your next login onward.
+
+You can install both the KDE and systemd autostart options at once if you
+like; they do the same thing and won't conflict.
+
+
+
 ## Uninstall
 
     ./uninstall.sh
@@ -290,7 +326,7 @@ Removes:
 
 -   /usr/local/bin/vrgb
 -   the udev rule
--   optional autostart entry
+-   optional KDE and/or systemd autostart entries
 
 
 
