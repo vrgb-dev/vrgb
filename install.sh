@@ -61,6 +61,23 @@ echo "Autostart installed."
 fi
 
 echo
+read -p "Install systemd user autostart restore (works on any desktop environment)? (y/n): " SYSTEMD_AUTOSTART
+
+if [[ "$SYSTEMD_AUTOSTART" == "y" || "$SYSTEMD_AUTOSTART" == "Y" ]]; then
+
+mkdir -p ~/.config/systemd/user
+
+install -m 644 "$SCRIPT_DIR/systemd/vrgb-restore.service" ~/.config/systemd/user/vrgb-restore.service
+
+systemctl --user daemon-reload
+systemctl --user enable vrgb-restore.service
+
+echo "systemd autostart installed and enabled."
+echo "It will start restoring your saved state from your next login onward."
+
+fi
+
+echo
 echo "Installation complete."
 echo
 echo "IMPORTANT:"
