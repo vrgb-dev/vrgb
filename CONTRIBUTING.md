@@ -39,6 +39,22 @@ release assets; it is not invoked automatically by CI.
 Conventional Commit messages are welcome because they keep history readable, but they do
 not trigger a release.
 
+### AUR packages
+
+The AUR package base `vrgb` (packages `vrgb` and `vrgb-gui`) is kept in `packaging/aur/`.
+Publishing a GitHub release runs `.github/workflows/aur.yml`, which sets the new version
+and checksum (`packaging/aur/update-aur.sh`), test-builds both packages in an Arch
+container and pushes to the AUR. Draft and pre-releases are not published.
+
+For a packaging-only fix (e.g. a changed dependency), edit `packaging/aur/PKGBUILD`, then
+run the workflow by hand from the Actions tab with the same version and `pkgrel` 2, 3, …;
+leave "dry run" checked first to see the build without pushing. To try it locally on Arch:
+`packaging/aur/update-aur.sh 1.0.0 1 /tmp/aur --build`.
+
+The workflow needs the repository secret `AUR_SSH_PRIVATE_KEY` (a dedicated key registered
+on an AUR account that maintains or co-maintains `vrgb`). Without it the workflow still
+test-builds and then skips the push with a warning; the AUR maintainer publishes by hand.
+
 ## Adding a new device
 
 VRGB already drives any HID LampArray keyboard it finds, reading the report IDs from the device's report descriptor; `vrgb status` shows such a device as unverified. A verified mapping adds what the descriptor cannot tell: the confirmed models and required kernel modules. It needs a report from someone who has tested it on a real laptop.

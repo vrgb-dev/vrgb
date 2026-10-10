@@ -1,0 +1,100 @@
+name: AUR
+
+# Publishes the AUR package base "vrgb" (vrgb + vrgb-gui) from packaging/aur/.
+# Runs only when a maintainer publishes a GitHub release (after testing on real
+# hardware), or by hand from the Actions tab - e.g. for a packaging-only fix
+# (pkgrel bump) or a dry run that builds without pushing.
+#
+# Setup (once): add the repository secret AUR_SSH_PRIVATE_KEY - a private SSH key
+# whose public half is registered on an AUR account that maintains or
+# co-maintains the "vrgb" package base. Use a dedicated key for this.
+# Until the secret exists the workflow still test-builds, then skips the push.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (tag without the leading v, e.g. 1.0.1)"
+        required: true
+      pkgrel:
+        description: "pkgrel (1 for a new version, 2+ for packaging-only fixes)"
+        default: "1"
+        required: true
+      dry_run:
+        description: "Build and show the result, but do not push to the AUR"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aur
+  cancel-in-progress: false
+
+jobs:
+  aur:
+    if: github.repository == 'vrgb-dev/vrgb' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install tools
+        run: |
+          pacman -Syu --noconfirm --needed git openssh python python-build \
+            python-installer python-setuptools python-wheel
+          useradd -m builder
+
+      - uses: actions/checkout@v6
+
+      - name: Resolve version
+        id: v
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          IN_VERSION: ${{ inputs.version }}
+          IN_PKGREL: ${{ inputs.pkgrel }}
+        run: |
+          version=${IN_VERSION:-${TAG#v}}
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "pkgrel=${IN_PKGREL:-1}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare and build (as non-root, makepkg refuses root)
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          PKGREL: ${{ steps.v.outputs.pkgrel }}
+        run: |
+          chown -R builder: "$GITHUB_WORKSPACE"
+          su builder -c "packaging/aur/update-aur.sh '$VERSION' '$PKGREL' /tmp/aur --build"
+
+      - name: Push to the AUR
+        if: ${{ !inputs.dry_run }}
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          VERSION: ${{ steps.v.outputs.version }}
+          PKGREL: ${{ steps.v.outputs.pkgrel }}
+        run: |
+          if [ -z "$AUR_SSH_PRIVATE_KEY" ]; then
+            echo "::warning::AUR_SSH_PRIVATE_KEY is not set - built OK, skipping the AUR push."
+            exit 0
+          fi
+          install -dm700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          # Pinned host key, as published on https://aur.archlinux.org
+          # (SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4)
+          echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' > ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+
+          git clone ssh://aur@aur.archlinux.org/vrgb.git /tmp/aur-repo
+          cp /tmp/aur/PKGBUILD /tmp/aur/.SRCINFO /tmp/aur/vrgb.install /tmp/aur/vrgb-gui.install /tmp/aur-repo/
+          cd /tmp/aur-repo
+          git config user.name "vrgb release bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO vrgb.install vrgb-gui.install
+          if git diff --cached --quiet; then
+            echo "AUR is already up to date."
+          else
+            git commit -m "Update to $VERSION-$PKGREL"
+            git push origin master
+          fi
