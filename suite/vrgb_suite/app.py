@@ -18,7 +18,7 @@ from PyQt6.QtCore import (
     pyqtSlot,
 )
 from PyQt6.QtDBus import QDBusConnection, QDBusInterface
-from PyQt6.QtGui import QColor, QAction, QActionGroup
+from PyQt6.QtGui import QColor, QAction, QActionGroup, QShortcut, QKeySequence
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -140,6 +140,10 @@ class MainWindow(QMainWindow):
             self._cfg_watch.directoryChanged.connect(lambda _p: self._cfg_reload.start())
 
         self.worker.submit("detect")
+
+        # Ctrl+Q: quit the app entirely (not just hide to tray)
+        quit_sc = QShortcut(QKeySequence("Ctrl+Q"), self)
+        quit_sc.activated.connect(self.quit_app)
 
     # ---- unified brightness math ----
     def _levels_for(self, b):
@@ -733,6 +737,14 @@ class MainWindow(QMainWindow):
             return
         self._load_from_cfg(cfg)
 
+    def quit_app(self):
+        self._quitting = True
+        tray = getattr(self, "tray", None)
+        if tray is not None:
+            tray._quit()
+        else:
+            QApplication.instance().quit()
+
 
 # ----------------------------------------------------------------------------
 # Tray
@@ -962,7 +974,7 @@ def main():
         def close_event(e):
             e.ignore()
             window.hide()
-            if tray:
+            if tray and not getattr(window, "_quitting", False):
                 tray.showMessage("VRGB", "Still running in the tray.",
                                  QSystemTrayIcon.MessageIcon.Information, 2000)
         window.closeEvent = close_event
