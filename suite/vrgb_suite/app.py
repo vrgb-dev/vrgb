@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
 
         # Ctrl+Q: quit the app entirely (not just hide to tray)
         quit_sc = QShortcut(QKeySequence("Ctrl+Q"), self)
-        quit_sc.activated.connect(self.quit_app)
+        quit_sc.activated.connect(self.shutdown)
 
     # ---- unified brightness math ----
     def _levels_for(self, b):
@@ -737,13 +737,14 @@ class MainWindow(QMainWindow):
             return
         self._load_from_cfg(cfg)
 
-    def quit_app(self):
+    def shutdown(self):
+        """Stop the worker and quit the application (bypasses hide-to-tray)."""
         self._quitting = True
-        tray = getattr(self, "tray", None)
-        if tray is not None:
-            tray._quit()
-        else:
-            QApplication.instance().quit()
+        self.worker.stop()
+        if not self.worker.wait(3000):
+            self.worker.terminate()
+            self.worker.wait(1000)
+        QApplication.instance().quit()
 
 
 # ----------------------------------------------------------------------------
@@ -808,7 +809,7 @@ class Tray(QSystemTrayIcon):
 
         menu.addSeparator()
         self.act_quit = QAction("Quit", self)
-        self.act_quit.triggered.connect(self._quit)
+        self.act_quit.triggered.connect(self.window.shutdown)
         menu.addAction(self.act_quit)
 
         menu.aboutToShow.connect(self._sync_controls)
@@ -853,13 +854,6 @@ class Tray(QSystemTrayIcon):
             self.window.raise_()
             self.window.activateWindow()
 
-    def _quit(self):
-        self.worker.stop()
-        if not self.worker.wait(3000):
-            self.worker.terminate()
-            self.worker.wait(1000)
-        self.app.quit()
-
 
 # ----------------------------------------------------------------------------
 # Entry point
@@ -879,9 +873,8 @@ class SingleInstance(QObject):
 
     @pyqtSlot()
     def Quit(self):
-        tray = getattr(self.window, "tray", None) if self.window else None
-        if tray is not None:
-            tray._quit()
+        if self.window is not None:
+            self.window.shutdown()
         else:
             QApplication.instance().quit()
 
