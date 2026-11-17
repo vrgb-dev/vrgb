@@ -10,7 +10,7 @@ if [[ $EUID -eq 0 ]]; then
     exit 1
 fi
 
-echo "VRGB Uninstaller (v1.0.0)"
+echo "VRGB Uninstaller (v1.1.0)"
 echo "----------------"
 
 echo "[1/5] Removing binary..."

@@ -92,6 +92,7 @@ models.
 -   Optional daytime-off automation using locally calculated
     sunrise/sunset
 -   XDG desktop autostart
+-   `Ctrl+Q` to quit the Suite completely without leaving it in the tray
 -   Idle/session integration across GNOME, KDE Plasma, compatible Wayland compositors, and X11
 
 For implementation details, session backends, report discovery, Python
@@ -117,22 +118,45 @@ model-specific controller initialization or other platform behavior that
 a HID descriptor cannot describe. A device is considered verified only
 after physical hardware testing.
 
-### Verified mappings
+### Verified laptops
 
-  -------------------------------------------------------------------------------------------
-  HID ID                     Confirmed       Firmware report     Color report Notes
-                             systems
-  -------------------------- -------------- ---------------- ---------------- ---------------
-  `0018:00000B05:000019B6`   ASUS Vivobook            `0x0B`           `0x05` Requires
-                             S14 S5406SA /                                    `asus-nb-wmi`
-                             S5406SA-WH79                                     on the verified
-                                                                              mapping
+The following models have been tested on physical hardware. The listed Linux
+configurations are **reported working setups**, not a guarantee for every
+kernel, distribution, or feature. See the notes below for feature-specific
+limitations.
 
-  `0018:00000B05:00005570`   ASUS Vivobook            `0x46`           `0x45` Community
-                             S16 M5606K,                                      validated
-                             S16 M5606WA,
-                             S14 M5406WA
-  -------------------------------------------------------------------------------------------
+| Family | Model | CPU / platform | Reported working Linux environment | HID ID | Verified behavior / notes |
+| --- | --- | --- | --- | --- | --- |
+| Vivobook S14 | S5406SA / S5406SA-WH79 | Intel Core Ultra | Fedora KDE; Omarchy (Arch-based) hardware report | `0018:00000B05:000019B6` | Static RGB, brightness and OEM rainbow confirmed; `asus-nb-wmi` required on tested mapping |
+| Vivobook S14 | M5406WA | AMD Ryzen AI 9 HX 370 | Fedora 43 Workstation, kernel 6.19.13 | `0018:00000B05:00005570` | Static RGB and brightness confirmed; OEM rainbow not tested |
+| Vivobook S15 OLED | M5506NA | AMD Ryzen 5 7535HS | Fedora 45, kernel 7.3.3-300.fc45 | `0018:00000B05:00005570` | Core 1.0.0: static RGB, brightness, software rainbow/cycle, profiles and login restore confirmed |
+| Vivobook S16 | M5606K | Community-tested Vivobook S16 | Linux (distribution not specified in the original hardware PR) | `0018:00000B05:00005570` | HID mapping and static color tested on physical hardware |
+| Vivobook S16 | M5606WA | AMD Ryzen AI 9 HX 370 | Fedora 43 Workstation; Alpine Linux Edge | `0018:00000B05:00005570` | HID RGB control confirmed; OEM rainbow did not work in one Fedora report; software color cycling reported on Alpine |
+| Vivobook S16 | M5606UA | AMD Ryzen 7 8845HS | Ubuntu 24.04.4 LTS, kernel 7.0.0-38-generic | `0018:00000B05:00005570` | Core and Suite 1.0.0 confirmed working; kernel 6.8.0-147-generic did not control the keyboard on the same laptop |
+
+**Other hardware reports:** The Vivobook S16 **S5606CA** has a report about
+OEM rainbow and Secure Boot, but not a full VRGB feature verification. The
+ASUS TUF Gaming A16 **FA608UP** exposes `0B05:19B6` yet did **not** respond
+to VRGB's Vivobook color packets; a contributor reported success using a
+separate controller-initialization workaround. Neither is listed as fully
+verified VRGB hardware.
+
+**Reported Linux environments:** Fedora 43, Fedora 44, Fedora 45, Ubuntu 24.04.4 LTS,
+Alpine Linux Edge, and Arch-based Omarchy appear in hardware reports. These
+are examples of tested configurations, not a distribution-wide compatibility
+certification. Fedora 45 Core functionality is separate from availability
+of Fedora 45 COPR packages.
+
+### Verified HID report mappings
+
+| HID ID | Firmware report | Color report | Notes |
+| --- | --- | --- | --- |
+| `0018:00000B05:000019B6` | `0x0B` | `0x05` | S5406SA family; requires `asus-nb-wmi` on the verified setup |
+| `0018:00000B05:00005570` | `0x46` | `0x45` | Shared by multiple verified AMD Vivobook models |
+
+The table above records **known-good mappings**, not an exhaustive device
+allowlist. Model verification and report-ID discovery are separate: compatible
+hardware may be detected even when its laptop model is not listed.
 
 VRGB prefers verified mappings. For other HID LampArray devices, Core can
 inspect the HID report descriptor at runtime, discover the required
@@ -169,6 +193,11 @@ paru -S vrgb-gui   # Suite (includes Core)
 ```
 
 ### Fedora (COPR)
+
+Fedora 45 has community-confirmed **Core** functionality on compatible
+hardware. Fedora 45 COPR package availability depends on the repository
+build targets; check the COPR project page for supported releases before
+installing.
 
 Enable the [VRGB COPR repository](https://copr.fedorainfracloud.org/coprs/vrgb-dev/vrgb/):
 
@@ -212,6 +241,29 @@ and back in before relying on that group access.
 
 Do **not** run the installer itself with `sudo`; it requests elevated
 privileges only for the system files that need them.
+
+### Updating VRGB
+
+**Manual (`git clone` / `./install.sh`) installs:** From your existing clone,
+fetch the latest code and rerun the installer for your installed edition:
+
+```bash
+cd /path/to/vrgb
+git pull --ff-only
+./install.sh core    # Core-only installation
+# OR
+./install.sh suite   # Suite installation
+```
+
+You do **not** need to uninstall VRGB first. Reinstalling the same edition
+updates the installed program without intentionally deleting your personal
+configuration at `~/.config/vrgb/config.json`. If you have local changes in
+the clone, resolve or preserve them before pulling. Restart any running Suite
+instance after updating.
+
+**AUR installs:** Update through your AUR helper (for example,
+`paru -Syu`). **Fedora COPR installs:** Update through DNF (`sudo dnf upgrade`).
+Do not use the manual installer to update a package-managed installation.
 
 Then try:
 
@@ -339,7 +391,9 @@ implementation.
 
 The main window provides color selection, brightness, Rainbow, power,
 firmware mode, and profile management. Closing the window leaves VRGB
-available in the system tray.
+available in the system tray. Press **`Ctrl+Q`** while the window is focused
+to quit the application completely, including the tray process. The tray
+menu’s **Quit** command also exits the application.
 
 The tray provides quick access to power, Rainbow, brightness, colors,
 profiles, and the main window.
@@ -419,6 +473,16 @@ boot:
 ``` bash
 echo asus-nb-wmi | sudo tee /etc/modules-load.d/asus-nb-wmi.conf
 ```
+
+### Ubuntu: lighting cycles but VRGB cannot control it
+
+A community report for the **Vivobook S16 M5606UA** on Ubuntu 24.04.4 LTS
+found that keyboard lighting kept cycling and could not be controlled with
+kernel `6.8.0-147-generic`. The same laptop was successfully controlled after
+moving to `7.0.0-38-generic`. If you encounter similar symptoms, check your
+running kernel with `uname -r` and investigate a supported kernel update for
+your distribution. **This is one hardware report, not a universal minimum
+kernel requirement for VRGB.**
 
 ### Permission denied
 

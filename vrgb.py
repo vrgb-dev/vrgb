@@ -81,6 +81,8 @@ SUPPORTED_DEVICES = {
             "ASUS Vivobook S16 (M5606K)",
             "ASUS Vivobook S16 (M5606WA)",
             "ASUS Vivobook S14 (M5406WA)",
+            "ASUS Vivobook S16 (M5606UA)",
+            "ASUS Vivobook S15 (M5506NA)",
         ],
         "firmware_report_id": 0x46,
         "color_report_id": 0x45,
@@ -96,7 +98,7 @@ LAMPARRAY_CONTROL_REPORT = 0x70
 HOST_BYTE = 0x00
 FIRMWARE_BYTE = 0x01
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 PROJECT_URL = "https://github.com/vrgb-dev/vrgb"
 
 # ===== Utilities =====

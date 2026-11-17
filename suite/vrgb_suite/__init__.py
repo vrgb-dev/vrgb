@@ -61,4 +61,4 @@ State lives in ~/.config/vrgb/config.json: Core's keys (color / intensity / prof
 autonomous) plus the Suite's own (see sun.DEFAULTS); Core preserves unknown keys.
 """
 
-__version__ = "1.0.0"  # released together with Core (vrgb.VERSION)
+__version__ = "1.1.0"  # released together with Core (vrgb.VERSION)

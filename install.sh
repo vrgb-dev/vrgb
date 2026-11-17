@@ -17,7 +17,7 @@ cd "$SCRIPT_DIR"
 
 SUITE_LIB=/usr/local/lib/vrgb-gui
 
-echo "VRGB Installer (v1.0.0)"
+echo "VRGB Installer (v1.1.0)"
 echo "---------------"
 
 # Ensure script exists
