@@ -129,7 +129,7 @@ limitations.
 | --- | --- | --- | --- | --- | --- |
 | Vivobook S14 | S5406SA / S5406SA-WH79 | Intel Core Ultra | Fedora KDE; Omarchy (Arch-based) hardware report | `0018:00000B05:000019B6` | Static RGB, brightness and OEM rainbow confirmed; `asus-nb-wmi` required on tested mapping |
 | Vivobook S14 | M5406WA | AMD Ryzen AI 9 HX 370 | Fedora 43 Workstation, kernel 6.19.13 | `0018:00000B05:00005570` | Static RGB and brightness confirmed; OEM rainbow not tested |
-| Vivobook S15 OLED | M5506NA | AMD Ryzen 5 7535HS | Fedora 45, kernel 7.3.3-300.fc45 | `0018:00000B05:00005570` | Core 1.0.0: static RGB, brightness, software rainbow/cycle, profiles and login restore confirmed |
+| Vivobook S15 | M5506NA | AMD Ryzen 5 7535HS | Fedora 45, kernel 7.3.3-300.fc45 | `0018:00000B05:00005570` | Core 1.0.0: static RGB, brightness, software rainbow/cycle, profiles and login restore confirmed |
 | Vivobook S16 | M5606K | Community-tested Vivobook S16 | Linux (distribution not specified in the original hardware PR) | `0018:00000B05:00005570` | HID mapping and static color tested on physical hardware |
 | Vivobook S16 | M5606WA | AMD Ryzen AI 9 HX 370 | Fedora 43 Workstation; Alpine Linux Edge | `0018:00000B05:00005570` | HID RGB control confirmed; OEM rainbow did not work in one Fedora report; software color cycling reported on Alpine |
 | Vivobook S16 | M5606UA | AMD Ryzen 7 8845HS | Ubuntu 24.04.4 LTS, kernel 7.0.0-38-generic | `0018:00000B05:00005570` | Core and Suite 1.0.0 confirmed working; kernel 6.8.0-147-generic did not control the keyboard on the same laptop |
